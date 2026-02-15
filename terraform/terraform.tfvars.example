@@ -1,0 +1,29 @@
+# ════════════════════════════════════════════════
+# Example Terraform Variables
+# ════════════════════════════════════════════════
+# Copy to terraform.tfvars and fill in your values.
+# NEVER commit terraform.tfvars to source control.
+
+project_id  = "your-gcp-project-id"
+region      = "us-central1"
+github_repo = "your-username/cyndx-langgraph-api"
+
+# Image tag (usually set by CI/CD, default: latest)
+# image_tag = "abc1234"
+
+# LLM configuration
+default_model       = "gpt-4o-mini"
+default_temperature = "0.7"
+
+# Scaling
+max_instances = 10
+min_instances = 0
+
+# API Keys — pass via CLI or CI/CD secrets, NOT here
+# terraform apply -var="openai_api_key=sk-..." -var="groq_api_key=gsk_..."
+#
+# openai_api_key    = ""
+# anthropic_api_key = ""
+# google_api_key    = ""
+# groq_api_key      = ""
+# tavily_api_key    = ""
