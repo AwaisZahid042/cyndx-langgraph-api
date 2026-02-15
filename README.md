@@ -1,6 +1,4 @@
-<<<<<<< HEAD
-# cyndx-langgraph-api
-=======
+
 # Cyndx LangGraph API
 
 A production-grade RESTful API wrapping a **LangGraph** conversational AI agent, deployed on **Google Cloud Run** with full **Terraform** infrastructure-as-code and **GitHub Actions** CI/CD.
@@ -9,7 +7,7 @@ Supports **4 LLM providers** (OpenAI, Anthropic, Google Gemini, Groq), **3 tool 
 
 ---
 
-## 🔑 Reviewer Quick Start
+##  Reviewer Quick Start
 
 > **Live API**: `https://YOUR_DEPLOYED_URL` (active for 48 hours post-submission)
 > **Swagger Docs**: `https://YOUR_DEPLOYED_URL/docs`
