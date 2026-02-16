@@ -1,4 +1,3 @@
-
 name: CD
 
 on:
@@ -14,34 +13,28 @@ env:
 
 permissions:
   contents: read
-  id-token: write  # For Workload Identity Federation
+  id-token: write
 
 jobs:
-  # ── Step 1: Run Tests (safety gate) ──
   test:
     name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-
       - name: Install dependencies
         run: pip install -e ".[dev]"
-
       - name: Run tests
         run: pytest tests/ -v --tb=short
 
-  # ── Step 2: Build & Push Docker Image ──
   build-push:
     name: Build & Push Image
     runs-on: ubuntu-latest
     needs: test
     outputs:
-      image_tag: ${{ steps.meta.outputs.tags }}
       short_sha: ${{ steps.vars.outputs.short_sha }}
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +43,6 @@ jobs:
         id: vars
         run: echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      # Authenticate to GCP
       - id: auth
         uses: google-github-actions/auth@v2
         with:
@@ -58,7 +50,6 @@ jobs:
           service_account: ${{ secrets.GCP_SA_EMAIL }}
           token_format: access_token
 
-      # Login to Artifact Registry
       - name: Login to GAR
         uses: docker/login-action@v3
         with:
@@ -69,7 +60,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build and push with commit SHA tag + latest
       - name: Build and Push
         uses: docker/build-push-action@v6
         with:
@@ -81,104 +71,66 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ── Step 3: Terraform Apply ──
-  terraform-apply:
-    name: Terraform Apply
+  deploy:
+    name: Deploy to Cloud Run
     runs-on: ubuntu-latest
     needs: build-push
     outputs:
-      service_url: ${{ steps.output.outputs.service_url }}
+      service_url: ${{ steps.deploy.outputs.url }}
     steps:
-      - uses: actions/checkout@v4
-
       - id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Deploy
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
-          terraform_version: 1.9.0
+          service: cyndx-langgraph-api
+          region: ${{ env.GCP_REGION }}
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-push.outputs.short_sha }}
 
-      - name: Terraform Init
-        working-directory: terraform
-        run: terraform init
-
-      - name: Terraform Apply
-        working-directory: terraform
-        run: |
-          terraform apply -auto-approve \
-            -var="project_id=${{ env.GCP_PROJECT_ID }}" \
-            -var="region=${{ env.GCP_REGION }}" \
-            -var="image_tag=${{ needs.build-push.outputs.short_sha }}"
-
-      - name: Get Service URL
-        id: output
-        working-directory: terraform
-        run: echo "service_url=$(terraform output -raw service_url)" >> "$GITHUB_OUTPUT"
-
-  # ── Step 4: Deploy & Smoke Test ──
   smoke-test:
     name: Smoke Test
     runs-on: ubuntu-latest
-    needs: terraform-apply
+    needs: deploy
     steps:
       - name: Wait for deployment
         run: sleep 30
 
-      # Hit /health and verify 200 OK
       - name: Health Check
         run: |
-          SERVICE_URL="${{ needs.terraform-apply.outputs.service_url }}"
+          SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
           echo "Testing: ${SERVICE_URL}/health"
-
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${SERVICE_URL}/health")
-
           if [ "$STATUS" -eq 200 ]; then
-            echo "✅ Health check passed (HTTP $STATUS)"
+            echo "Health check passed"
           else
-            echo "❌ Health check failed (HTTP $STATUS)"
+            echo "Health check failed (HTTP $STATUS)"
             curl -s "${SERVICE_URL}/health" | jq .
             exit 1
           fi
 
-      # Create a session and send a message
-      - name: API Integration Test
+      - name: API Test
         run: |
-          SERVICE_URL="${{ needs.terraform-apply.outputs.service_url }}"
-
-          # Create session
-          echo "📝 Creating session..."
-          SESSION=$(curl -s -X POST "${SERVICE_URL}/sessions" \
-            -H "Content-Type: application/json" \
-            -d '{}')
-          echo "$SESSION" | jq .
-
+          SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
+          SESSION=$(curl -s -X POST "${SERVICE_URL}/sessions" -H "Content-Type: application/json" -d '{}')
           SESSION_ID=$(echo "$SESSION" | jq -r '.session_id')
           if [ "$SESSION_ID" == "null" ] || [ -z "$SESSION_ID" ]; then
-            echo "❌ Failed to create session"
+            echo "Failed to create session"
             exit 1
           fi
-          echo "✅ Session created: $SESSION_ID"
+          echo "Session created: $SESSION_ID"
 
-          # Send message
-          echo "💬 Sending message..."
-          RESPONSE=$(curl -s -X POST "${SERVICE_URL}/sessions/${SESSION_ID}/messages" \
-            -H "Content-Type: application/json" \
-            -d '{"content": "Hello, this is a smoke test. Reply with OK."}')
-          echo "$RESPONSE" | jq .
-
+          RESPONSE=$(curl -s -X POST "${SERVICE_URL}/sessions/${SESSION_ID}/messages" -H "Content-Type: application/json" -d '{"content": "Hello, smoke test. Reply OK."}')
           CONTENT=$(echo "$RESPONSE" | jq -r '.content')
           if [ "$CONTENT" == "null" ] || [ -z "$CONTENT" ]; then
-            echo "❌ Failed to get agent response"
+            echo "No agent response"
             exit 1
           fi
-          echo "✅ Agent responded successfully"
+          echo "Agent responded"
 
-          # Cleanup
           curl -s -X DELETE "${SERVICE_URL}/sessions/${SESSION_ID}" > /dev/null
-          echo "✅ Session cleaned up"
-
-          echo ""
-          echo "🎉 All smoke tests passed!"
+          echo "All smoke tests passed"
