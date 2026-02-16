@@ -76,7 +76,7 @@ resource "google_cloud_run_v2_service" "api" {
 
       # ── Secrets (injected from Secret Manager at runtime) ──
       dynamic "env" {
-        for_each = contains(keys(local.active_secrets), "openai-api-key") ? [1] : []
+        for_each = contains(local.secret_keys, "openai-api-key") ? [1] : []
         content {
           name = "OPENAI_API_KEY"
           value_source {
@@ -89,7 +89,7 @@ resource "google_cloud_run_v2_service" "api" {
       }
 
       dynamic "env" {
-        for_each = contains(keys(local.active_secrets), "anthropic-api-key") ? [1] : []
+        for_each = contains(local.secret_keys, "anthropic-api-key") ? [1] : []
         content {
           name = "ANTHROPIC_API_KEY"
           value_source {
@@ -102,7 +102,7 @@ resource "google_cloud_run_v2_service" "api" {
       }
 
       dynamic "env" {
-        for_each = contains(keys(local.active_secrets), "google-api-key") ? [1] : []
+        for_each = contains(local.secret_keys, "google-api-key") ? [1] : []
         content {
           name = "GOOGLE_API_KEY"
           value_source {
@@ -115,7 +115,7 @@ resource "google_cloud_run_v2_service" "api" {
       }
 
       dynamic "env" {
-        for_each = contains(keys(local.active_secrets), "groq-api-key") ? [1] : []
+        for_each = contains(local.secret_keys, "groq-api-key") ? [1] : []
         content {
           name = "GROQ_API_KEY"
           value_source {
@@ -128,7 +128,7 @@ resource "google_cloud_run_v2_service" "api" {
       }
 
       dynamic "env" {
-        for_each = contains(keys(local.active_secrets), "tavily-api-key") ? [1] : []
+        for_each = contains(local.secret_keys, "tavily-api-key") ? [1] : []
         content {
           name = "TAVILY_API_KEY"
           value_source {
