@@ -550,11 +550,11 @@ cyndx-langgraph-api/
 
 ## Bonus Features Implemented
 
-- ✅ **SSE Streaming** — `POST /sessions/{id}/messages/stream` for real-time token streaming
-- ✅ **Rate Limiting** — Per-IP/API-key token bucket via slowapi
-- ✅ **API Key Auth** — Optional `X-API-Key` header validation
-- ✅ **OpenTelemetry Metrics** — 4 custom metrics exported to Cloud Monitoring
-- ✅ **Cost Estimation** — See table above
-- ✅ **Load Testing** — Locust script with multi-turn conversation scenarios
-- ✅ **Alerting** — Error rate and P99 latency alert policies in Terraform
+-  **SSE Streaming** — `POST /sessions/{id}/messages/stream` for real-time token streaming
+-  **Rate Limiting** — Per-IP/API-key token bucket via slowapi
+-  **API Key Auth** — Optional `X-API-Key` header validation
+-  **OpenTelemetry Metrics** — 4 custom metrics exported to Cloud Monitoring
+-  **Cost Estimation** — See table above
+-  **Load Testing** — Locust script with multi-turn conversation scenarios
+-  **Alerting** — Error rate and P99 latency alert policies in Terraform
 >>>>>>> b23e0c7 (Initial commit: LangGraph API with Cloud Run deployment)
