@@ -116,7 +116,7 @@ jobs:
       - name: API Test
         run: |
           SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
-          SESSION=$(curl -s -X POST "${SERVICE_URL}/sessions" -H "Content-Type: application/json" -d '{}')
+          SESSION=$(curl -s -X POST "${SERVICE_URL}/sessions" -H "Content-Type: application/json" -d '{"agent_config": {"model": "llama-3.1-8b-instant"}}')
           SESSION_ID=$(echo "$SESSION" | jq -r '.session_id')
           if [ "$SESSION_ID" == "null" ] || [ -z "$SESSION_ID" ]; then
             echo "Failed to create session"
