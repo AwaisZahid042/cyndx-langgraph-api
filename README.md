@@ -503,17 +503,6 @@ The Tavily search tool validates its API key on instantiation. Lazy loading (onl
 
 ---
 
-## Cost Estimation
-
-| Traffic | Cloud Run | Secret Manager | Logging | Monitoring | Total |
-|---------|-----------|----------------|---------|------------|-------|
-| ~100 req/day | ~$0 (free tier) | ~$0.06 | ~$0 | ~$0 | **~$1-2/mo** |
-| ~5K req/day | ~$15-25 | ~$3 | ~$5 | ~$5 | **~$28-38/mo** |
-| ~50K req/day | ~$150-250 | ~$15 | ~$30 | ~$20 | **~$215-315/mo** |
-
-*Excludes LLM API costs which scale linearly with usage.*
-
----
 
 ## Repository Structure
 
@@ -557,4 +546,3 @@ cyndx-langgraph-api/
 -  **Cost Estimation** — See table above
 -  **Load Testing** — Locust script with multi-turn conversation scenarios
 -  **Alerting** — Error rate and P99 latency alert policies in Terraform
->>>>>>> b23e0c7 (Initial commit: LangGraph API with Cloud Run deployment)
