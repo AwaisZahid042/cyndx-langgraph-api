@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     port: int = 8080
 
     # llm defaults
-    default_model: str = "gpt-4o-mini"
+    default_model: str = "llama-3.1-8b-instant"
     default_temperature: float = 0.7
 
     # provider keys (need at least one)
